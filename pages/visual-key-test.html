@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>Keynova Visual Key Test</title>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    input {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    #result {
+      margin-top: 25px;
+      font-size: 1.1rem;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .success {
+      background: #0f4;
+      color: #000;
+    }
+
+    .error {
+      background: #f33;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 اختبار مفتاح Keynova البصري</h1>
+  <p>اختر صورة مفتاح مجزّأ لمقارنتها مع المرجعية الهندسية.</p>
+  <input type="file" accept="image/*" onchange="handleUpload(event)">
+  <canvas id="testCanvas" width="512" height="512" style="display:none;"></canvas>
+  <div id="result"></div>
+
+  <script type="module">
+    import keynovaMasterData from "../assets/logic/keynovaMasterData.js";
+    import { verifyVisualKey } from "../assets/logic/verifyVisualKey.js";
+
+    function handleUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const isValid = verifyVisualKey(img);
+        const resultBox = document.getElementById('result');
+
+        if (isValid) {
+          resultBox.className = 'success';
+          resultBox.textContent = '✅ المفتاح البصري مطابق للمرجعية — تم التحقق بنجاح!';
+        } else {
+          resultBox.className = 'error';
+          resultBox.textContent = '❌ المفتاح غير مطابق. الرجاء التحقق من الملف أو تجربة مفتاح آخر.';
+        }
+      };
+    }
+    window.handleUpload = handleUpload;
+  </script>
+</body>
+</html>

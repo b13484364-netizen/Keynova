@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>Keynova — التحدي الموحد</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background-color: #0f0f0f;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 2rem;
+    }
+
+    input {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .btn {
+      background: #ff6a00;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.3s ease;
+      margin-top: 10px;
+    }
+
+    .btn:hover {
+      background: #ff8000;
+    }
+
+    #result, #passwordResult {
+      margin-top: 25px;
+      font-size: 1rem;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 600px;
+      text-align: left;
+    }
+
+    .success {
+      background: #0f4;
+      color: #000;
+    }
+
+    .error {
+      background: #f33;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🔐 Keynova — التحدي الموحد</h1>
+  <p>ارفع مفتاحك البصري أو أدخل كلمة المرور لفتح الملف المناسب.</p>
+
+  <!-- نافذة رفع صورة المفتاح -->
+  <input type="file" accept="image/*" onchange="handleKeynova(event)">
+  <div id="result"></div>
+
+  <!-- نافذة إدخال كلمة مرور للمفتاح الثاني -->
+  <div class="key">
+    <p>🧩 إدخال كلمة المرور:</p>
+    <input type="password" id="passwordInput" placeholder="كلمة المرور" />
+    <button class="btn" onclick="checkPassword()">تحقق</button>
+    <div id="passwordResult" class="keyResult"></div>
+  </div>
+
+  <!-- عبارة احترافية توضح فلسفة Keynova -->
+  <div style="margin-top: 30px; max-width: 600px; font-size: 0.95rem; color: #ccc; line-height: 1.6;">
+    🔍 <strong>Keynova</strong> لا تعتمد على كلمات مرور تقليدية أو رموز عشوائية...  
+    بل على مفاتيح هندسية بصرية لا يمكن تزويرها.<br>
+    كل مفتاح هو تمثيل بصري فريد، وكل تحقق هو تجربة تصميمية ذكية.
+  </div>
+
+  <script>
+    const key1Name = "unlock.part01.png";
+    const key3Hash = "b7a295f72c7de817b37d9f27700527f7688eec720001cf2750b5b072ce656775";
+    const key4Hash = "2cb6792233fe38d66196100874c837fb6beb022d7bd749cb50bd4363f01b0d47";
+    const correctPassword = "nova2";
+
+    async function getImageHash(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const buffer = new Uint8Array(e.target.result);
+          crypto.subtle.digest("SHA-256", buffer).then((hash) => {
+            const hex = Array.from(new Uint8Array(hash))
+              .map(b => b.toString(16).padStart(2, "0"))
+              .join("");
+            resolve(hex);
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function handleKeynova(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const resultBox = document.getElementById("result");
+      const fileName = file.name;
+      const hash = await getImageHash(file);
+
+      if (fileName === key1Name) {
+        resultBox.className = "success";
+        resultBox.innerHTML = `✅ المفتاح الأول صالح.<br>
+          <a href="assets/key1.pdf" target="_blank" class="btn">فتح الملف الأول</a>`;
+      } else if (hash === key3Hash) {
+        resultBox.className = "success";
+        resultBox.innerHTML = `✅ المفتاح الثالث صالح.<br>
+          <a href="assets/key3.pdf" target="_blank" class="btn">فتح الملف الثالث</a>`;
+      } else if (hash === key4Hash) {
+        resultBox.className = "success";
+        resultBox.innerHTML = `✅ المفتاح الرابع صالح.<br>
+          <a href="assets/key4.pdf" target="_blank" class="btn">فتح الملف الرابع</a>`;
+      } else {
+        resultBox.className = "error";
+        resultBox.innerHTML = `🚫 المفتاح غير صالح.<br>
+          <a href="assets/key5.pdf" target="_blank" class="btn">فتح الملف الخامس</a>`;
+      }
+    }
+
+    function checkPassword() {
+      const input = document.getElementById("passwordInput").value.trim();
+      const resultBox = document.getElementById("passwordResult");
+
+      if (input === correctPassword) {
+        resultBox.className = "success";
+        resultBox.innerHTML = `✅ كلمة المرور صحيحة.<br>
+          <a href="assets/key2.pdf" target="_blank" class="btn">فتح الملف الثاني</a>`;
+      } else {
+        resultBox.className = "error";
+        resultBox.innerHTML = `🚫 كلمة المرور غير صحيحة.<br>
+          <a href="assets/key5.pdf" target="_blank" class="btn">فتح الملف الخامس</a>`;
+      }
+    }
+  </script>
+
+</body>
+</html>

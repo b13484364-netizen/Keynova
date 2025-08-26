@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>Keynova — تشخيص المفتاح الكامل</title>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    input {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    #result {
+      margin-top: 25px;
+      font-size: 1rem;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 700px;
+      text-align: left;
+    }
+
+    .success {
+      background: #0f4;
+      color: #000;
+    }
+
+    .error {
+      background: #f33;
+      color: #fff;
+    }
+
+    a.btn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #ff6a00;
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    a.btn:hover {
+      background: #ff8000;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 تشخيص المفتاح البصري الكامل</h1>
+  <p>ارفع صورة مطابقة تمامًا للصورة الأم لمعرفة سبب الفشل إن وجد.</p>
+  <input type="file" accept="image/*" onchange="handleUpload(event)">
+  <div id="result"></div>
+
+  <script>
+    async function verifyKeyWithMaster(keyImgElement) {
+      return new Promise((resolve) => {
+        const masterImg = new Image();
+        masterImg.src = "../assets/keynova-master.png?v=" + Date.now();
+
+        masterImg.onload = () => {
+          const result = {
+            matchRatio: 0,
+            differences: [],
+            keyWidth: keyImgElement.width,
+            keyHeight: keyImgElement.height,
+            masterWidth: masterImg.width,
+            masterHeight: masterImg.height,
+            comparedFrom: "x=0, y=0"
+          };
+
+          if (
+            keyImgElement.width !== masterImg.width ||
+            keyImgElement.height !== masterImg.height
+          ) {
+            result.differences.push("❌ اختلاف في الأبعاد بين المفتاح والصورة الأم");
+            resolve(result);
+            return;
+          }
+
+          const canvasMaster = document.createElement("canvas");
+          const ctxMaster = canvasMaster.getContext("2d");
+          canvasMaster.width = masterImg.width;
+          canvasMaster.height = masterImg.height;
+          ctxMaster.drawImage(masterImg, 0, 0);
+
+          const canvasKey = document.createElement("canvas");
+          const ctxKey = canvasKey.getContext("2d");
+          canvasKey.width = keyImgElement.width;
+          canvasKey.height = keyImgElement.height;
+          ctxKey.drawImage(keyImgElement, 0, 0);
+
+          const masterData = ctxMaster.getImageData(0, 0, masterImg.width, masterImg.height).data;
+          const keyData = ctxKey.getImageData(0, 0, keyImgElement.width, keyImgElement.height).data;
+
+          let matchCount = 0;
+          for (let i = 0; i < keyData.length; i++) {
+            const diff = Math.abs(keyData[i] - masterData[i]);
+            if (
+              diff <= 50 ||
+              (keyData[i] === 0 && masterData[i] === 255) ||
+              (keyData[i] === 255 && masterData[i] === 0)
+            ) {
+              matchCount++;
+            } else if (result.differences.length < 10) {
+              result.differences.push(`Pixel ${i}: key=${keyData[i]}, master=${masterData[i]}, diff=${diff}`);
+            }
+          }
+
+          result.matchRatio = matchCount / keyData.length;
+          resolve(result);
+        };
+      });
+    }
+
+    function handleUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = async () => {
+        const result = await verifyKeyWithMaster(img);
+        const resultBox = document.getElementById('result');
+
+        const summary = `
+          📐 أبعاد المفتاح: ${result.keyWidth}×${result.keyHeight}<br>
+          📐 أبعاد الصورة الأم: ${result.masterWidth}×${result.masterHeight}<br>
+          🧭 المقارنة من: ${result.comparedFrom}<br>
+          📊 نسبة التطابق: ${(result.matchRatio * 100).toFixed(2)}%<br>
+          🔍 عدد البيكسلات المتطابقة: ${Math.round(result.matchRatio * result.keyWidth * result.keyHeight * 4)}<br>
+        `;
+
+        if (result.matchRatio >= 0.95) {
+          resultBox.className = 'success';
+          resultBox.innerHTML = summary +
+            '<a href="../assets/key4.pdf" target="_blank" class="btn">فتح الملف الرابع</a>';
+        } else {
+          resultBox.className = 'error';
+          resultBox.innerHTML = summary +
+            '<br>📌 أول 10 اختلافات:<br><ul>' +
+            result.differences.map(d => `<li>${d}</li>`).join('') + '</ul>';
+        }
+      };
+    }
+
+    window.handleUpload = handleUpload;
+  </script>
+</body>
+</html>

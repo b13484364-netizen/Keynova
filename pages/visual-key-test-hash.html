@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>Keynova — تحقق عبر محتوى الصورة</title>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    input {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    #result {
+      margin-top: 25px;
+      font-size: 1rem;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 600px;
+      text-align: left;
+    }
+
+    .success {
+      background: #0f4;
+      color: #000;
+    }
+
+    .error {
+      background: #f33;
+      color: #fff;
+    }
+
+    a.btn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #ff6a00;
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    a.btn:hover {
+      background: #ff8000;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 تحقق من الصورة عبر محتواها الحقيقي</h1>
+  <p>ارفع صورة مطابقة تمامًا للصورة الأم لفتح الملف.</p>
+  <input type="file" accept="image/*" onchange="handleUpload(event)">
+  <div id="result"></div>
+
+  <script>
+    // ✅ الهاش الحقيقي للصورة الأم
+    const masterHash = "2cb6792233fe38d66196100874c837fb6beb022d7bd749cb50bd4363f01b0d47";
+
+    async function getImageHash(file) {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const buffer = new Uint8Array(e.target.result);
+          crypto.subtle.digest("SHA-256", buffer).then((hash) => {
+            const hex = Array.from(new Uint8Array(hash))
+              .map(b => b.toString(16).padStart(2, "0"))
+              .join("");
+            resolve(hex);
+          });
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    async function handleUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const hash = await getImageHash(file);
+      const resultBox = document.getElementById("result");
+
+      if (hash === masterHash) {
+        resultBox.className = "success";
+        resultBox.innerHTML = `✅ الصورة مطابقة تمامًا.<br>
+          <a href="../assets/key4.pdf" target="_blank" class="btn">فتح الملف الرابع</a>`;
+      } else {
+        resultBox.className = "error";
+        resultBox.innerHTML = `❌ الصورة غير مطابقة.<br>Hash المرفوع: ${hash}`;
+      }
+    }
+
+    window.handleUpload = handleUpload;
+  </script>
+</body>
+</html>

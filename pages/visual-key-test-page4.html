@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>Keynova — اختبار المفتاح الرابع</title>
+  <style>
+    body {
+      background: #0f0f0f;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+    }
+
+    input {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    #result {
+      margin-top: 25px;
+      font-size: 1.1rem;
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .success {
+      background: #0f4;
+      color: #000;
+    }
+
+    .error {
+      background: #f33;
+      color: #fff;
+    }
+
+    a.btn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: #ff6a00;
+      color: #fff;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    a.btn:hover {
+      background: #ff8000;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 اختبار المفتاح البصري الرابع</h1>
+  <p>ارفع صورة المفتاح المجزّأ للتحقق من تطابقها مع الصورة الأم.</p>
+  <input type="file" accept="image/*" onchange="handleUpload(event)">
+  <div id="result"></div>
+
+  <script>
+    async function verifyKeyWithMaster(keyImgElement) {
+      return new Promise((resolve) => {
+        const masterImg = new Image();
+        masterImg.src = "../assets/keynova-master.png?v=" + Date.now(); // تجاوز التخزين المؤقت
+
+        masterImg.onload = () => {
+          // Canvas للصورة الأم
+          const canvasMaster = document.createElement("canvas");
+          const ctxMaster = canvasMaster.getContext("2d");
+          canvasMaster.width = masterImg.width;
+          canvasMaster.height = masterImg.height;
+          ctxMaster.drawImage(masterImg, 0, 0);
+
+          // Canvas للمفتاح المجزّأ
+          const canvasKey = document.createElement("canvas");
+          const ctxKey = canvasKey.getContext("2d");
+          canvasKey.width = keyImgElement.width;
+          canvasKey.height = keyImgElement.height;
+          ctxKey.drawImage(keyImgElement, 0, 0);
+
+          // استخراج جزء من الصورة الأم من x=128, y=128
+          const masterData = ctxMaster.getImageData(
+            128, 128, keyImgElement.width, keyImgElement.height
+          ).data;
+
+          const keyData = ctxKey.getImageData(
+            0, 0, keyImgElement.width, keyImgElement.height
+          ).data;
+
+          // مقارنة البيكسلات
+          let matchCount = 0;
+          for (let i = 0; i < keyData.length; i++) {
+            if (Math.abs(keyData[i] - masterData[i]) <= 30) {
+              matchCount++;
+            }
+          }
+
+          const matchRatio = matchCount / keyData.length;
+          resolve(matchRatio);
+        };
+      });
+    }
+
+    function handleUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = async () => {
+        const matchRatio = await verifyKeyWithMaster(img);
+        const resultBox = document.getElementById('result');
+
+        if (matchRatio >= 0.95) {
+          resultBox.className = 'success';
+          resultBox.innerHTML = `✅ نسبة التطابق: ${(matchRatio * 100).toFixed(2)}%<br>
+            <a href="../assets/key4.pdf" target="_blank" class="btn">فتح الملف الرابع</a>`;
+        } else {
+          resultBox.className = 'error';
+          resultBox.innerHTML = `❌ نسبة التطابق: ${(matchRatio * 100).toFixed(2)}%<br>
+            المفتاح غير مطابق هندسيًا.`;
+        }
+      };
+    }
+
+    window.handleUpload = handleUpload;
+  </script>
+</body>
+</html>
